@@ -9,14 +9,14 @@ This study aims to help farmers by early detection of disease through rice leaf 
 
 ## Data
 
-The data used for this project is [Rice Diseases Image Dataset](https://www.kaggle.com/minhhuy2810/rice-diseases-image-dataset/version/1?fbclid=IwAR3QwbQzFpHLe_KCelIbrrMB4kwaBfhzJhrcqLwX7DEOJmLfkI4ZRF2le4U) compiled by Huy Minh Do and uploaded in Kaggle. This consists of 3355 images of isolated rice leaves with four classifications: Healthy (1488) or afflicted with one of the diseases: Hispa (565), Brown Spot (523), or Leaf Blast (779). The image sizes range from 734 by 734 pixels to 3120 by 3120 pixels. Sample images of the dataset for each classification is shown in Figure 1. 
+The data used for this project is [Rice Diseases Image Dataset](https://www.kaggle.com/minhhuy2810/rice-diseases-image-dataset/version/1?fbclid=IwAR3QwbQzFpHLe_KCelIbrrMB4kwaBfhzJhrcqLwX7DEOJmLfkI4ZRF2le4U) compiled by Huy Minh Do and uploaded in Kaggle. This consists of 3355 images of isolated rice leaves with four classifications: Healthy (1488) or afflicted with one of the diseases: Hispa (565), Brown Spot (523), or Leaf Blast (779). The image sizes range from 734 by 734 pixels to 3120 by 3120 pixels. Sample images of the dataset for each classification is shown in Figure 1.
 
 <img src='sampleimages.png'>
 <div align='center'>Figure 1. Sample images of rice leaves per classification: Leaf Blast, Brown Spot, Hispa, and Healthy.</div>
 
 ## Data Pre-processing
 
-Before any modeling or classification is performed on the images, several image pre-processing steps must be performed first. 
+Before any modeling or classification is performed on the images, several image pre-processing steps must be performed first.
 
 ### Reshape
 
@@ -46,7 +46,7 @@ for file, file_save in zip(files, files_reshape):
     wpercent = (basewidth/float(img.size[0]))
     hsize = int((float(img.size[1])*float(wpercent)))
     img = img.resize((basewidth,hsize), Image.ANTIALIAS)
-    img.save(file_save) 
+    img.save(file_save)
 
 ```
 
@@ -57,9 +57,9 @@ After reshaping, the foreground of the image, i.e. the actual leaf, must be sepa
 
 These are the steps taken to remove the background per image:
 
-1. We first perform thresholding according to the RGB values. We want the green pixels and the area around it so we filter by taking out the pixels that have too high red and blue values. 
+1. We first perform thresholding according to the RGB values. We want the green pixels and the area around it so we filter by taking out the pixels that have too high red and blue values.
 
-        1a. We start with 220 threshold (out of 255) and continuously reduce this threshold if the resulting mask image is too big (i.e. not much of the image has been filtered). 
+        1a. We start with 220 threshold (out of 255) and continuously reduce this threshold if the resulting mask image is too big (i.e. not much of the image has been filtered).
 
 2. From the resulting mask, we perform morphological techniques like opening so that the pixels in-between the green leaf pixels will be included into the mask (i.e. the brown spots which will most likely be filtered out will be included using the morphological technique). For this, we use a circular structuring element of radius 13px.
 
@@ -113,23 +113,23 @@ for file, file_save in zip(files, files_bgremoved):
     R = im_arr[:, :, 0]
     G = im_arr[:, :, 1]
     B = im_arr[:, :, 2]
-    while bg_frac < 0.6: 
+    while bg_frac < 0.6:
         bg_mask = ((R>thres) | (B>thres))# & (G < 100)
         bg_frac = bg_mask.sum()/len(bg_mask.flatten())
         thres -= 5
     # we use opening first since our mask is reversed (the foreground and background are reversed here)
     bg_mask = binary_closing(erosion(binary_opening(bg_mask, selem), np.ones((3, 3))), np.ones((5,5)))
-    
+
     #Get biggest blob
     label, num_label = ndimage.label(~bg_mask)
     size = np.bincount(label.ravel())
     biggest_label = size[1:].argmax() + 1
     bg_mask = label == biggest_label
-    
+
     im_arr[~bg_mask, 0] = 255
     im_arr[~bg_mask, 1] = 255
     im_arr[~bg_mask, 2] = 255
-    
+
     img = Image.fromarray(im_arr)
     img.save(file_save)
     idx+=1
@@ -157,7 +157,7 @@ plt.hist(B.flatten(), alpha=0.5)
 
 
 
-![png](output_16_1.png)
+![png](output_img/output_16_1.png)
 
 
 ### Data Augmentation
@@ -183,8 +183,8 @@ os.makedirs(base_dir, exist_ok=True)
 ```python
 datagen = ImageDataGenerator(
     rotation_range=30, width_shift_range=0.15,
-    height_shift_range=0.15, shear_range=0.15, 
-    zoom_range=0.2,horizontal_flip=True, 
+    height_shift_range=0.15, shear_range=0.15,
+    zoom_range=0.2,horizontal_flip=True,
     fill_mode="nearest", validation_split=0.3)
 batch_size = 32
 
@@ -205,7 +205,7 @@ val_generator = datagen.flow_from_directory(
 
     Found 2319 images belonging to 4 classes.
     Found 991 images belonging to 4 classes.
-    
+
 
 ## Modeling
 
@@ -231,8 +231,8 @@ checkpoint = ModelCheckpoint('VGG16.h5', verbose=1, monitor='val_accuracy', save
 ```python
 datagen = ImageDataGenerator(
     rotation_range=30, width_shift_range=0.15,
-    height_shift_range=0.15, shear_range=0.15, 
-    zoom_range=0.2,horizontal_flip=True, 
+    height_shift_range=0.15, shear_range=0.15,
+    zoom_range=0.2,horizontal_flip=True,
     fill_mode="nearest")
 # datagen = ImageDataGenerator(rescale=1./255)
 
@@ -270,7 +270,7 @@ conv_base = VGG16(weights='imagenet',
     WARNING:tensorflow:From C:\Users\Justin\Anaconda3\envs\tf-gpu\lib\site-packages\tensorflow\python\ops\init_ops.py:1251: calling VarianceScaling.__init__ (from tensorflow.python.ops.init_ops) with dtype is deprecated and will be removed in a future version.
     Instructions for updating:
     Call initializer instance with the dtype argument instead of passing it to the constructor
-    
+
 
 
 ```python
@@ -325,7 +325,7 @@ plot_model(model, to_file='model_plot.png', show_shapes=True, show_layer_names=T
 ```
 
     Failed to import pydot. You must install pydot and graphviz for `pydotprint` to work.
-    
+
 
 
 ```python
@@ -340,7 +340,7 @@ model.compile(loss="binary_crossentropy", optimizer=opt, metrics=["accuracy"])
 
 from keras.callbacks import ModelCheckpoint
 
-checkpoint = ModelCheckpoint('VGG16.h5', verbose=1, monitor='val_acc', save_best_only=True, mode='auto') 
+checkpoint = ModelCheckpoint('VGG16.h5', verbose=1, monitor='val_acc', save_best_only=True, mode='auto')
 
 history = model.fit(train_features, train_labels,
                     epochs=30,
@@ -353,10 +353,10 @@ history = model.fit(train_features, train_labels,
     WARNING:tensorflow:From C:\Users\Justin\Anaconda3\envs\tf-gpu\lib\site-packages\tensorflow\python\ops\math_grad.py:1250: add_dispatch_support.<locals>.wrapper (from tensorflow.python.ops.array_ops) is deprecated and will be removed in a future version.
     Instructions for updating:
     Use tf.where in 2.0, which has the same broadcast rule as np.where
-    
+
 
     Using TensorFlow backend.
-    
+
 
     Epoch 1/30
     2272/2319 [============================>.] - ETA: 0s - loss: 6.3477 - acc: 0.5844
@@ -478,7 +478,7 @@ history = model.fit(train_features, train_labels,
     2272/2319 [============================>.] - ETA: 0s - loss: 6.4034 - acc: 0.5836
     Epoch 00030: val_acc did not improve from 0.58426
     2319/2319 [==============================] - 3s 1ms/sample - loss: 6.3964 - acc: 0.5841 - val_loss: 6.3937 - val_acc: 0.5843
-    
+
 
 ### VGG16 (Frozen first 3)
 
@@ -486,8 +486,8 @@ history = model.fit(train_features, train_labels,
 ```python
 datagen = ImageDataGenerator(
     rotation_range=30, width_shift_range=0.15,
-    height_shift_range=0.15, shear_range=0.15, 
-    zoom_range=0.2,horizontal_flip=True, 
+    height_shift_range=0.15, shear_range=0.15,
+    zoom_range=0.2,horizontal_flip=True,
     fill_mode="nearest", validation_split=0.3)
 batch_size = 32
 
@@ -508,7 +508,7 @@ val_generator = datagen.flow_from_directory(
 
     Found 2319 images belonging to 4 classes.
     Found 991 images belonging to 4 classes.
-    
+
 
 
 ```python
@@ -549,7 +549,7 @@ model.compile(loss="binary_crossentropy", optimizer=opt, metrics=["accuracy"])
 
 from keras.callbacks import ModelCheckpoint
 
-checkpoint = ModelCheckpoint('VGG16_frozen3.h5', verbose=1, monitor='val_acc', save_best_only=True, mode='auto') 
+checkpoint = ModelCheckpoint('VGG16_frozen3.h5', verbose=1, monitor='val_acc', save_best_only=True, mode='auto')
 
 history = model.fit_generator(train_generator,
                     epochs=30,
@@ -559,126 +559,126 @@ history = model.fit_generator(train_generator,
 ```
 
     Epoch 1/30
-    71/72 [============================>.] - ETA: 6s - loss: 4.5213 - acc: 0.7051 
+    71/72 [============================>.] - ETA: 6s - loss: 4.5213 - acc: 0.7051
     Epoch 00001: val_acc improved from -inf to 0.72200, saving model to VGG16_frozen4.h5
     72/72 [==============================] - 550s 8s/step - loss: 4.5388 - acc: 0.7040 - val_loss: 4.2754 - val_acc: 0.7220
     Epoch 2/30
-    71/72 [============================>.] - ETA: 5s - loss: 4.2951 - acc: 0.7206 
+    71/72 [============================>.] - ETA: 5s - loss: 4.2951 - acc: 0.7206
     Epoch 00002: val_acc did not improve from 0.72200
     72/72 [==============================] - 535s 7s/step - loss: 4.2922 - acc: 0.7208 - val_loss: 4.2761 - val_acc: 0.7220
     Epoch 3/30
-    71/72 [============================>.] - ETA: 5s - loss: 4.2723 - acc: 0.7226 
+    71/72 [============================>.] - ETA: 5s - loss: 4.2723 - acc: 0.7226
     Epoch 00003: val_acc did not improve from 0.72200
     72/72 [==============================] - 535s 7s/step - loss: 4.2596 - acc: 0.7234 - val_loss: 4.2754 - val_acc: 0.7220
     Epoch 4/30
-    71/72 [============================>.] - ETA: 5s - loss: 4.3019 - acc: 0.7202 
+    71/72 [============================>.] - ETA: 5s - loss: 4.3019 - acc: 0.7202
     Epoch 00004: val_acc did not improve from 0.72200
     72/72 [==============================] - 537s 7s/step - loss: 4.2922 - acc: 0.7208 - val_loss: 4.2754 - val_acc: 0.7220
     Epoch 5/30
-    71/72 [============================>.] - ETA: 5s - loss: 4.2613 - acc: 0.7228 
+    71/72 [============================>.] - ETA: 5s - loss: 4.2613 - acc: 0.7228
     Epoch 00005: val_acc did not improve from 0.72200
     72/72 [==============================] - 537s 7s/step - loss: 4.2689 - acc: 0.7223 - val_loss: 4.2751 - val_acc: 0.7220
     Epoch 6/30
-    71/72 [============================>.] - ETA: 5s - loss: 4.3082 - acc: 0.7195 
+    71/72 [============================>.] - ETA: 5s - loss: 4.3082 - acc: 0.7195
     Epoch 00006: val_acc did not improve from 0.72200
     72/72 [==============================] - 537s 7s/step - loss: 4.3085 - acc: 0.7195 - val_loss: 4.2749 - val_acc: 0.7220
     Epoch 7/30
-    71/72 [============================>.] - ETA: 6s - loss: 4.2667 - acc: 0.7217 
+    71/72 [============================>.] - ETA: 6s - loss: 4.2667 - acc: 0.7217
     Epoch 00007: val_acc did not improve from 0.72200
     72/72 [==============================] - 551s 8s/step - loss: 4.2477 - acc: 0.7230 - val_loss: 4.2754 - val_acc: 0.7220
     Epoch 8/30
-    71/72 [============================>.] - ETA: 6s - loss: 4.2644 - acc: 0.7227 
+    71/72 [============================>.] - ETA: 6s - loss: 4.2644 - acc: 0.7227
     Epoch 00008: val_acc did not improve from 0.72200
     72/72 [==============================] - 540s 7s/step - loss: 4.2720 - acc: 0.7222 - val_loss: 4.2749 - val_acc: 0.7220
     Epoch 9/30
-    71/72 [============================>.] - ETA: 5s - loss: 4.3051 - acc: 0.7196 
+    71/72 [============================>.] - ETA: 5s - loss: 4.3051 - acc: 0.7196
     Epoch 00009: val_acc did not improve from 0.72200
     72/72 [==============================] - 533s 7s/step - loss: 4.3054 - acc: 0.7196 - val_loss: 4.2741 - val_acc: 0.7220
     Epoch 10/30
-    71/72 [============================>.] - ETA: 5s - loss: 4.2177 - acc: 0.7259 
+    71/72 [============================>.] - ETA: 5s - loss: 4.2177 - acc: 0.7259
     Epoch 00010: val_acc did not improve from 0.72200
     72/72 [==============================] - 535s 7s/step - loss: 4.2325 - acc: 0.7250 - val_loss: 4.2746 - val_acc: 0.7220
     Epoch 11/30
-    71/72 [============================>.] - ETA: 5s - loss: 4.2791 - acc: 0.7222 
+    71/72 [============================>.] - ETA: 5s - loss: 4.2791 - acc: 0.7222
     Epoch 00011: val_acc did not improve from 0.72200
     72/72 [==============================] - 536s 7s/step - loss: 4.2797 - acc: 0.7221 - val_loss: 4.2749 - val_acc: 0.7220
     Epoch 12/30
-    71/72 [============================>.] - ETA: 5s - loss: 4.3084 - acc: 0.7199 
+    71/72 [============================>.] - ETA: 5s - loss: 4.3084 - acc: 0.7199
     Epoch 00012: val_acc did not improve from 0.72200
     72/72 [==============================] - 538s 7s/step - loss: 4.3120 - acc: 0.7196 - val_loss: 4.2756 - val_acc: 0.7220
     Epoch 13/30
-    71/72 [============================>.] - ETA: 5s - loss: 4.2509 - acc: 0.7232 
+    71/72 [============================>.] - ETA: 5s - loss: 4.2509 - acc: 0.7232
     Epoch 00013: val_acc did not improve from 0.72200
     72/72 [==============================] - 537s 7s/step - loss: 4.2487 - acc: 0.7233 - val_loss: 4.2741 - val_acc: 0.7220
     Epoch 14/30
-    71/72 [============================>.] - ETA: 5s - loss: 4.2782 - acc: 0.7217 
+    71/72 [============================>.] - ETA: 5s - loss: 4.2782 - acc: 0.7217
     Epoch 00014: val_acc did not improve from 0.72200
     72/72 [==============================] - 542s 8s/step - loss: 4.2789 - acc: 0.7217 - val_loss: 4.2761 - val_acc: 0.7220
     Epoch 15/30
-    71/72 [============================>.] - ETA: 5s - loss: 4.3134 - acc: 0.7202 
+    71/72 [============================>.] - ETA: 5s - loss: 4.3134 - acc: 0.7202
     Epoch 00015: val_acc did not improve from 0.72200
     72/72 [==============================] - 535s 7s/step - loss: 4.3001 - acc: 0.7210 - val_loss: 4.2756 - val_acc: 0.7220
     Epoch 16/30
-    71/72 [============================>.] - ETA: 5s - loss: 4.2850 - acc: 0.7213 
+    71/72 [============================>.] - ETA: 5s - loss: 4.2850 - acc: 0.7213
     Epoch 00016: val_acc did not improve from 0.72200
     72/72 [==============================] - 535s 7s/step - loss: 4.2755 - acc: 0.7219 - val_loss: 4.2759 - val_acc: 0.7220
     Epoch 17/30
-    71/72 [============================>.] - ETA: 6s - loss: 4.2543 - acc: 0.7234 
+    71/72 [============================>.] - ETA: 6s - loss: 4.2543 - acc: 0.7234
     Epoch 00017: val_acc did not improve from 0.72200
     72/72 [==============================] - 539s 7s/step - loss: 4.2620 - acc: 0.7229 - val_loss: 4.2744 - val_acc: 0.7220
     Epoch 18/30
-    71/72 [============================>.] - ETA: 5s - loss: 4.3141 - acc: 0.7203 
+    71/72 [============================>.] - ETA: 5s - loss: 4.3141 - acc: 0.7203
     Epoch 00018: val_acc did not improve from 0.72200
     72/72 [==============================] - 532s 7s/step - loss: 4.3107 - acc: 0.7205 - val_loss: 4.2739 - val_acc: 0.7220
     Epoch 19/30
-    71/72 [============================>.] - ETA: 5s - loss: 4.2566 - acc: 0.7224 
+    71/72 [============================>.] - ETA: 5s - loss: 4.2566 - acc: 0.7224
     Epoch 00019: val_acc did not improve from 0.72200
     72/72 [==============================] - 535s 7s/step - loss: 4.2510 - acc: 0.7228 - val_loss: 4.2749 - val_acc: 0.7220
     Epoch 20/30
-    71/72 [============================>.] - ETA: 5s - loss: 4.2227 - acc: 0.7246 
+    71/72 [============================>.] - ETA: 5s - loss: 4.2227 - acc: 0.7246
     Epoch 00020: val_acc did not improve from 0.72200
     72/72 [==============================] - 538s 7s/step - loss: 4.2210 - acc: 0.7247 - val_loss: 4.2751 - val_acc: 0.7220
     Epoch 21/30
-    71/72 [============================>.] - ETA: 5s - loss: 4.3121 - acc: 0.7195 
+    71/72 [============================>.] - ETA: 5s - loss: 4.3121 - acc: 0.7195
     Epoch 00021: val_acc did not improve from 0.72200
     72/72 [==============================] - 536s 7s/step - loss: 4.3056 - acc: 0.7199 - val_loss: 4.2761 - val_acc: 0.7220
     Epoch 22/30
-    71/72 [============================>.] - ETA: 5s - loss: 4.3116 - acc: 0.7193 
+    71/72 [============================>.] - ETA: 5s - loss: 4.3116 - acc: 0.7193
     Epoch 00022: val_acc did not improve from 0.72200
     72/72 [==============================] - 537s 7s/step - loss: 4.3085 - acc: 0.7195 - val_loss: 4.2741 - val_acc: 0.7220
     Epoch 23/30
-    71/72 [============================>.] - ETA: 5s - loss: 4.3048 - acc: 0.7197 
+    71/72 [============================>.] - ETA: 5s - loss: 4.3048 - acc: 0.7197
     Epoch 00023: val_acc did not improve from 0.72200
     72/72 [==============================] - 535s 7s/step - loss: 4.2985 - acc: 0.7202 - val_loss: 4.2764 - val_acc: 0.7220
     Epoch 24/30
-    71/72 [============================>.] - ETA: 6s - loss: 4.1798 - acc: 0.7282 
+    71/72 [============================>.] - ETA: 6s - loss: 4.1798 - acc: 0.7282
     Epoch 00024: val_acc did not improve from 0.72200
     72/72 [==============================] - 540s 7s/step - loss: 4.1752 - acc: 0.7285 - val_loss: 4.2754 - val_acc: 0.7220
     Epoch 25/30
-    71/72 [============================>.] - ETA: 5s - loss: 4.3330 - acc: 0.7183 
+    71/72 [============================>.] - ETA: 5s - loss: 4.3330 - acc: 0.7183
     Epoch 00025: val_acc did not improve from 0.72200
     72/72 [==============================] - 532s 7s/step - loss: 4.3263 - acc: 0.7187 - val_loss: 4.2751 - val_acc: 0.7220
     Epoch 26/30
-    71/72 [============================>.] - ETA: 5s - loss: 4.3186 - acc: 0.7192 
+    71/72 [============================>.] - ETA: 5s - loss: 4.3186 - acc: 0.7192
     Epoch 00026: val_acc did not improve from 0.72200
     72/72 [==============================] - 537s 7s/step - loss: 4.3187 - acc: 0.7192 - val_loss: 4.2759 - val_acc: 0.7220
     Epoch 27/30
-    71/72 [============================>.] - ETA: 5s - loss: 4.2836 - acc: 0.7223 
+    71/72 [============================>.] - ETA: 5s - loss: 4.2836 - acc: 0.7223
     Epoch 00027: val_acc did not improve from 0.72200
     72/72 [==============================] - 537s 7s/step - loss: 4.2974 - acc: 0.7214 - val_loss: 4.2751 - val_acc: 0.7220
     Epoch 28/30
-    71/72 [============================>.] - ETA: 5s - loss: 4.2105 - acc: 0.7262 
+    71/72 [============================>.] - ETA: 5s - loss: 4.2105 - acc: 0.7262
     Epoch 00028: val_acc did not improve from 0.72200
     72/72 [==============================] - 536s 7s/step - loss: 4.2055 - acc: 0.7265 - val_loss: 4.2754 - val_acc: 0.7220
     Epoch 29/30
-    71/72 [============================>.] - ETA: 5s - loss: 4.2613 - acc: 0.7228 
+    71/72 [============================>.] - ETA: 5s - loss: 4.2613 - acc: 0.7228
     Epoch 00029: val_acc did not improve from 0.72200
     72/72 [==============================] - 536s 7s/step - loss: 4.2655 - acc: 0.7226 - val_loss: 4.2756 - val_acc: 0.7220
     Epoch 30/30
-    71/72 [============================>.] - ETA: 5s - loss: 4.3024 - acc: 0.7204 
+    71/72 [============================>.] - ETA: 5s - loss: 4.3024 - acc: 0.7204
     Epoch 00030: val_acc did not improve from 0.72200
     72/72 [==============================] - 535s 7s/step - loss: 4.3060 - acc: 0.7202 - val_loss: 4.2759 - val_acc: 0.7220
-    
+
 
 ### VGG19
 
@@ -686,8 +686,8 @@ history = model.fit_generator(train_generator,
 ```python
 datagen = ImageDataGenerator(
     rotation_range=30, width_shift_range=0.15,
-    height_shift_range=0.15, shear_range=0.15, 
-    zoom_range=0.2,horizontal_flip=True, 
+    height_shift_range=0.15, shear_range=0.15,
+    zoom_range=0.2,horizontal_flip=True,
     fill_mode="nearest", validation_split=0.3)
 batch_size = 32
 
@@ -708,7 +708,7 @@ val_generator = datagen.flow_from_directory(
 
     Found 2319 images belonging to 4 classes.
     Found 991 images belonging to 4 classes.
-    
+
 
 
 ```python
@@ -776,7 +776,7 @@ model.compile(loss="binary_crossentropy", optimizer=opt, metrics=["accuracy"])
 
 from keras.callbacks import ModelCheckpoint
 
-checkpoint = ModelCheckpoint('VGG19.h5', verbose=1, monitor='val_acc', save_best_only=True, mode='auto') 
+checkpoint = ModelCheckpoint('VGG19.h5', verbose=1, monitor='val_acc', save_best_only=True, mode='auto')
 
 history = model.fit(train_features19, train_labels19,
                     epochs=30,
@@ -906,7 +906,7 @@ history = model.fit(train_features19, train_labels19,
     2272/2319 [============================>.] - ETA: 0s - loss: 3.3915 - acc: 0.7839
     Epoch 00030: val_acc did not improve from 0.72402
     2319/2319 [==============================] - 3s 1ms/sample - loss: 3.3936 - acc: 0.7837 - val_loss: 4.8328 - val_acc: 0.6852
-    
+
 
 ### XCeption
 
@@ -914,8 +914,8 @@ history = model.fit(train_features19, train_labels19,
 ```python
 datagen = ImageDataGenerator(
     rotation_range=30, width_shift_range=0.15,
-    height_shift_range=0.15, shear_range=0.15, 
-    zoom_range=0.2,horizontal_flip=True, 
+    height_shift_range=0.15, shear_range=0.15,
+    zoom_range=0.2,horizontal_flip=True,
     fill_mode="nearest", validation_split=0.3)
 batch_size = 32
 
@@ -936,7 +936,7 @@ val_generator = datagen.flow_from_directory(
 
     Found 2319 images belonging to 4 classes.
     Found 991 images belonging to 4 classes.
-    
+
 
 
 ```python
@@ -946,7 +946,7 @@ from tensorflow.keras.applications.xception import Xception, preprocess_input
 
 ```python
 xception_base = Xception(weights='imagenet',
-                         include_top=False, 
+                         include_top=False,
                          input_shape=(224, 224, 3))
 ```
 
@@ -1007,7 +1007,7 @@ model.compile(loss="binary_crossentropy", optimizer=opt, metrics=["accuracy"])
 
 from keras.callbacks import ModelCheckpoint
 
-checkpoint = ModelCheckpoint('XCeption.h5', verbose=1, monitor='val_acc', save_best_only=True, mode='auto') 
+checkpoint = ModelCheckpoint('XCeption.h5', verbose=1, monitor='val_acc', save_best_only=True, mode='auto')
 
 history = model.fit(train_features_x, train_labels_x,
                     epochs=30,
@@ -1137,7 +1137,7 @@ history = model.fit(train_features_x, train_labels_x,
     2300/2319 [============================>.] - ETA: 0s - loss: 4.2827 - acc: 0.7215
     Epoch 00030: val_acc did not improve from 0.72402
     2319/2319 [==============================] - 15s 7ms/sample - loss: 4.2775 - acc: 0.7219 - val_loss: 4.2754 - val_acc: 0.7220
-    
+
 
 ### ResNet
 
@@ -1145,8 +1145,8 @@ history = model.fit(train_features_x, train_labels_x,
 ```python
 datagen = ImageDataGenerator(
     rotation_range=30, width_shift_range=0.15,
-    height_shift_range=0.15, shear_range=0.15, 
-    zoom_range=0.2,horizontal_flip=True, 
+    height_shift_range=0.15, shear_range=0.15,
+    zoom_range=0.2,horizontal_flip=True,
     fill_mode="nearest", validation_split=0.3)
 batch_size = 32
 
@@ -1167,7 +1167,7 @@ val_generator = datagen.flow_from_directory(
 
     Found 2319 images belonging to 4 classes.
     Found 991 images belonging to 4 classes.
-    
+
 
 
 ```python
@@ -1183,7 +1183,7 @@ resnet_base = ResNet50(weights='imagenet',
 
     C:\Users\Justin\Anaconda3\envs\tf-gpu\lib\site-packages\keras_applications\resnet50.py:265: UserWarning: The output shape of `ResNet50(include_top=False)` has been changed since Keras 2.2.0.
       warnings.warn('The output shape of `ResNet50(include_top=False)` '
-    
+
 
 
 ```python
@@ -1240,7 +1240,7 @@ model.compile(loss="binary_crossentropy", optimizer=opt, metrics=["accuracy"])
 
 from keras.callbacks import ModelCheckpoint
 
-checkpoint = ModelCheckpoint('ResNet.h5', verbose=1, monitor='val_acc', save_best_only=True, mode='auto') 
+checkpoint = ModelCheckpoint('ResNet.h5', verbose=1, monitor='val_acc', save_best_only=True, mode='auto')
 
 
 history = model.fit(train_features_res, train_labels_res,
@@ -1371,7 +1371,7 @@ history = model.fit(train_features_res, train_labels_res,
     2304/2319 [============================>.] - ETA: 0s - loss: 0.4927 - acc: 0.9855
     Epoch 00030: val_acc did not improve from 0.72200
     2319/2319 [==============================] - 10s 4ms/sample - loss: 0.4913 - acc: 0.9856 - val_loss: 4.2754 - val_acc: 0.7220
-    
+
 
 ### 5Conv2Dense
 
@@ -1438,7 +1438,7 @@ try:
 
     for disease_folder in root_dir :
         plant_disease_image_list = listdir(f"{directory_root}/{disease_folder}")
-        
+
         for image in plant_disease_image_list:
             image_directory = f"{directory_root}/{disease_folder}/{image}"
             if image_directory.endswith(".jpg") == True or image_directory.endswith(".JPG") == True:
@@ -1451,7 +1451,7 @@ except Exception as e:
 
     [INFO] Loading images ...
     [INFO] Image loading completed
-    
+
 
 
 ```python
@@ -1460,7 +1460,7 @@ print(image_size)
 ```
 
     3310
-    
+
 
 
 ```python
@@ -1476,7 +1476,7 @@ print(label_binarizer.classes_)
 ```
 
     ['BrownSpot' 'Healthy' 'Hispa' 'LeafBlast']
-    
+
 
 
 ```python
@@ -1486,18 +1486,18 @@ np_image_list = np.array(image_list, dtype=np.float16) / 225.0
 
 ```python
 print("[INFO] Spliting data to train, test")
-x_train, x_test, y_train, y_test = train_test_split(np_image_list, image_labels, test_size=0.30, random_state = 42) 
+x_train, x_test, y_train, y_test = train_test_split(np_image_list, image_labels, test_size=0.30, random_state = 42)
 ```
 
     [INFO] Spliting data to train, test
-    
+
 
 
 ```python
 aug = ImageDataGenerator(
     rotation_range=30, width_shift_range=0.15,
-    height_shift_range=0.15, shear_range=0.15, 
-    zoom_range=0.2,horizontal_flip=True, 
+    height_shift_range=0.15, shear_range=0.15,
+    zoom_range=0.2,horizontal_flip=True,
     fill_mode="nearest")
 ```
 
@@ -1608,7 +1608,7 @@ model.summary()
     Trainable params: 14,731,076
     Non-trainable params: 1,344
     _________________________________________________________________
-    
+
 
 
 ```python
@@ -1620,13 +1620,13 @@ print("[INFO] training network...")
 ```
 
     [INFO] training network...
-    
+
 
 
 ```python
 from keras.callbacks import ModelCheckpoint
 
-checkpoint = ModelCheckpoint('best_model_5conv2dense_woutBG.h5', verbose=1, monitor='val_accuracy', save_best_only=True, mode='auto') 
+checkpoint = ModelCheckpoint('best_model_5conv2dense_woutBG.h5', verbose=1, monitor='val_accuracy', save_best_only=True, mode='auto')
 ```
 
 
@@ -1642,125 +1642,125 @@ history = model.fit_generator(
 
     Epoch 1/30
     144/144 [==============================] - 52s 362ms/step - loss: 0.7391 - accuracy: 0.6913 - val_loss: 4.9252 - val_accuracy: 0.5901
-    
+
     Epoch 00001: val_accuracy improved from -inf to 0.59013, saving model to best_model_5conv2dense_woutBG.h5
     Epoch 2/30
     144/144 [==============================] - 39s 273ms/step - loss: 0.6358 - accuracy: 0.7182 - val_loss: 2.4550 - val_accuracy: 0.6183
-    
+
     Epoch 00002: val_accuracy improved from 0.59013 to 0.61833, saving model to best_model_5conv2dense_woutBG.h5
     Epoch 3/30
     144/144 [==============================] - 39s 273ms/step - loss: 0.5616 - accuracy: 0.7363 - val_loss: 0.5656 - val_accuracy: 0.7326
-    
+
     Epoch 00003: val_accuracy improved from 0.61833 to 0.73263, saving model to best_model_5conv2dense_woutBG.h5
     Epoch 4/30
     144/144 [==============================] - 39s 274ms/step - loss: 0.5074 - accuracy: 0.7602 - val_loss: 0.9816 - val_accuracy: 0.6067
-    
+
     Epoch 00004: val_accuracy did not improve from 0.73263
     Epoch 5/30
     144/144 [==============================] - 40s 274ms/step - loss: 0.4885 - accuracy: 0.7641 - val_loss: 0.4937 - val_accuracy: 0.7719
-    
+
     Epoch 00005: val_accuracy improved from 0.73263 to 0.77190, saving model to best_model_5conv2dense_woutBG.h5
     Epoch 6/30
     144/144 [==============================] - 40s 275ms/step - loss: 0.4969 - accuracy: 0.7585 - val_loss: 1.0292 - val_accuracy: 0.6156
-    
+
     Epoch 00006: val_accuracy did not improve from 0.77190
     Epoch 7/30
     144/144 [==============================] - 39s 274ms/step - loss: 0.4874 - accuracy: 0.7610 - val_loss: 0.6813 - val_accuracy: 0.6853
-    
+
     Epoch 00007: val_accuracy did not improve from 0.77190
     Epoch 8/30
     144/144 [==============================] - 40s 275ms/step - loss: 0.4860 - accuracy: 0.7640 - val_loss: 1.6646 - val_accuracy: 0.6400
-    
+
     Epoch 00008: val_accuracy did not improve from 0.77190
     Epoch 9/30
     144/144 [==============================] - 40s 275ms/step - loss: 0.4749 - accuracy: 0.7693 - val_loss: 1.1247 - val_accuracy: 0.6075
-    
+
     Epoch 00009: val_accuracy did not improve from 0.77190
     Epoch 10/30
     144/144 [==============================] - 39s 274ms/step - loss: 0.4710 - accuracy: 0.7723 - val_loss: 1.2479 - val_accuracy: 0.6015
-    
+
     Epoch 00010: val_accuracy did not improve from 0.77190
     Epoch 11/30
     144/144 [==============================] - 39s 274ms/step - loss: 0.4791 - accuracy: 0.7690 - val_loss: 6.1577 - val_accuracy: 0.5891
-    
+
     Epoch 00011: val_accuracy did not improve from 0.77190
     Epoch 12/30
     144/144 [==============================] - 40s 275ms/step - loss: 0.4787 - accuracy: 0.7671 - val_loss: 1.6094 - val_accuracy: 0.5853
-    
+
     Epoch 00012: val_accuracy did not improve from 0.77190
     Epoch 13/30
     144/144 [==============================] - 39s 274ms/step - loss: 0.5136 - accuracy: 0.7532 - val_loss: 1.1623 - val_accuracy: 0.6717
-    
+
     Epoch 00013: val_accuracy did not improve from 0.77190
     Epoch 14/30
     144/144 [==============================] - 40s 275ms/step - loss: 0.4923 - accuracy: 0.7592 - val_loss: 0.5309 - val_accuracy: 0.7583
-    
+
     Epoch 00014: val_accuracy did not improve from 0.77190
     Epoch 15/30
     144/144 [==============================] - 40s 275ms/step - loss: 0.4866 - accuracy: 0.7639 - val_loss: 2.0296 - val_accuracy: 0.5914
-    
+
     Epoch 00015: val_accuracy did not improve from 0.77190
     Epoch 16/30
     144/144 [==============================] - 40s 275ms/step - loss: 0.4980 - accuracy: 0.7621 - val_loss: 1.3041 - val_accuracy: 0.6377
-    
+
     Epoch 00016: val_accuracy did not improve from 0.77190
     Epoch 17/30
     144/144 [==============================] - 39s 274ms/step - loss: 0.4860 - accuracy: 0.7638 - val_loss: 3.6666 - val_accuracy: 0.6279
-    
+
     Epoch 00017: val_accuracy did not improve from 0.77190
     Epoch 18/30
     144/144 [==============================] - 40s 276ms/step - loss: 0.4952 - accuracy: 0.7586 - val_loss: 0.4978 - val_accuracy: 0.7565
-    
+
     Epoch 00018: val_accuracy did not improve from 0.77190
     Epoch 19/30
     144/144 [==============================] - 39s 274ms/step - loss: 0.4898 - accuracy: 0.7622 - val_loss: 0.5935 - val_accuracy: 0.7351
-    
+
     Epoch 00019: val_accuracy did not improve from 0.77190
     Epoch 20/30
     144/144 [==============================] - 40s 280ms/step - loss: 0.4908 - accuracy: 0.7570 - val_loss: 0.7096 - val_accuracy: 0.7210
-    
+
     Epoch 00020: val_accuracy did not improve from 0.77190
     Epoch 21/30
     144/144 [==============================] - 40s 274ms/step - loss: 0.4815 - accuracy: 0.7633 - val_loss: 0.8459 - val_accuracy: 0.7039
-    
+
     Epoch 00021: val_accuracy did not improve from 0.77190
     Epoch 22/30
     144/144 [==============================] - 40s 274ms/step - loss: 0.4953 - accuracy: 0.7618 - val_loss: 0.7891 - val_accuracy: 0.6704
-    
+
     Epoch 00022: val_accuracy did not improve from 0.77190
     Epoch 23/30
     144/144 [==============================] - 40s 275ms/step - loss: 0.4927 - accuracy: 0.7584 - val_loss: 0.5652 - val_accuracy: 0.7442
-    
+
     Epoch 00023: val_accuracy did not improve from 0.77190
     Epoch 24/30
     144/144 [==============================] - 39s 274ms/step - loss: 0.4812 - accuracy: 0.7631 - val_loss: 0.6358 - val_accuracy: 0.7082
-    
+
     Epoch 00024: val_accuracy did not improve from 0.77190
     Epoch 25/30
     144/144 [==============================] - 39s 274ms/step - loss: 0.4771 - accuracy: 0.7686 - val_loss: 0.4817 - val_accuracy: 0.7623
-    
+
     Epoch 00025: val_accuracy did not improve from 0.77190
     Epoch 26/30
     144/144 [==============================] - 39s 274ms/step - loss: 0.4712 - accuracy: 0.7710 - val_loss: 0.6384 - val_accuracy: 0.7175
-    
+
     Epoch 00026: val_accuracy did not improve from 0.77190
     Epoch 27/30
     144/144 [==============================] - 40s 274ms/step - loss: 0.4738 - accuracy: 0.7677 - val_loss: 0.5649 - val_accuracy: 0.7492
-    
+
     Epoch 00027: val_accuracy did not improve from 0.77190
     Epoch 28/30
     144/144 [==============================] - 39s 274ms/step - loss: 0.4700 - accuracy: 0.7722 - val_loss: 0.4506 - val_accuracy: 0.7820
-    
+
     Epoch 00028: val_accuracy improved from 0.77190 to 0.78197, saving model to best_model_5conv2dense_woutBG.h5
     Epoch 29/30
     144/144 [==============================] - 39s 274ms/step - loss: 0.4728 - accuracy: 0.7674 - val_loss: 0.5140 - val_accuracy: 0.7608
-    
+
     Epoch 00029: val_accuracy did not improve from 0.78197
     Epoch 30/30
     144/144 [==============================] - 39s 274ms/step - loss: 0.4695 - accuracy: 0.7676 - val_loss: 1.2072 - val_accuracy: 0.6458
-    
+
     Epoch 00030: val_accuracy did not improve from 0.78197
-    
+
 
 
 ```python
@@ -1785,11 +1785,11 @@ plt.show()
 ```
 
 
-![png](output_75_0.png)
+![png](output_img/output_75_0.png)
 
 
 
-![png](output_75_1.png)
+![png](output_img/output_75_1.png)
 
 
 
@@ -1818,7 +1818,7 @@ print(f"Test Accuracy: {scores[1]*100}")
     [INFO] Calculating model accuracy
     993/993 [==============================] - 5s 5ms/step
     Test Accuracy: 78.19738388061523
-    
+
 
 ### Looking at each type of leaf:
 
@@ -1830,7 +1830,7 @@ print(f"Test Accuracy: {scores_brownspot[1]*100}")
 
     179/179 [==============================] - 1s 7ms/step
     Test Accuracy: 85.33519506454468
-    
+
 
 
 ```python
@@ -1840,7 +1840,7 @@ print(f"Test Accuracy: {scores_healthy[1]*100}")
 
     432/432 [==============================] - 2s 5ms/step
     Test Accuracy: 92.1875
-    
+
 
 
 ```python
@@ -1850,7 +1850,7 @@ print(f"Test Accuracy: {scores_hispa[1]*100}")
 
     148/148 [==============================] - 1s 7ms/step
     Test Accuracy: 54.39189076423645
-    
+
 
 
 ```python
@@ -1860,7 +1860,7 @@ print(f"Test Accuracy: {scores_leafblast[1]*100}")
 
     234/234 [==============================] - 1s 6ms/step
     Test Accuracy: 61.965811252593994
-    
+
 
 ## Results
 
@@ -1873,7 +1873,7 @@ Training all the models discussed with the processed images, the accuracy of eac
 
 | Base model                                      | Accuracy |
 |----|----|
-|VGG16 | 58.4\% | 
+|VGG16 | 58.4\% |
 |VGG16 (with first three blocks are frozen) | 72.2\%  |
 |VGG19                                           | 72.4\%   |
 |XCeption                                        | 72.2\%   |
@@ -1881,7 +1881,7 @@ Training all the models discussed with the processed images, the accuracy of eac
 |5-layer convolution                             | 78.2\%  |
 
 
-Looking further into the best model and how well it predicts each class, an 85.3% accuracy was found for brown spot, 54.4% for hispa, and 62.0% for leaf blast. On the other hand for healthy rice leaves, it was classified accurately 92.2% of the time. From this, discrepancies on prediction power of the model to different classifications can be observed. Except for brown spots, the model only accurately predicts more than half of rice leaves with disease. 
+Looking further into the best model and how well it predicts each class, an 85.3% accuracy was found for brown spot, 54.4% for hispa, and 62.0% for leaf blast. On the other hand for healthy rice leaves, it was classified accurately 92.2% of the time. From this, discrepancies on prediction power of the model to different classifications can be observed. Except for brown spots, the model only accurately predicts more than half of rice leaves with disease.
 
 This can be attributed to the dataset used wherein the progression of the disease on the leaves were at its initial stages, so the symptoms are not that developed yet. While the model suffers from relatively low accuracy because of this, the power to predict disease at an earlier stage would give the farmers the opportunity to treat the diseases even before it spreads. This would save them time and energy that they have limited amount of and allow them to focus on the growth of their crops with less worries. That said, seeing how effective the model is on predicting if healthy rice leaves are actually healthy, it can prevent farmers from unnecessarily providing treatment when the plants are actually healthy.
 
@@ -1894,7 +1894,7 @@ For future studies, we recommend to improve the accuracy of prediction by explor
 
 ## Acknowledgements
 
-  The authors would like to acknowledge our Machine Learning 2.0 professors, Prof. Christopher Monterola, and Prof. Erika Legara for all their guidance and support for the completion of this project. 
+  The authors would like to acknowledge our Machine Learning 2.0 professors, Prof. Christopher Monterola, and Prof. Erika Legara for all their guidance and support for the completion of this project.
 
 
 ```python
