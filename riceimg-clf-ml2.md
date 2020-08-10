@@ -1895,8 +1895,3 @@ For future studies, we recommend to improve the accuracy of prediction by explor
 ## Acknowledgements
 
   The authors would like to acknowledge our Machine Learning 2.0 professors, Prof. Christopher Monterola, and Prof. Erika Legara for all their guidance and support for the completion of this project.
-
-
-```python
-
-```
